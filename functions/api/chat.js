@@ -26,13 +26,13 @@ export async function onRequestPost(context) {
     };
 
     const chosen = active.length
-      ? active.filter((x) => chars[x])
+      ? active.filter((k) => chars[k])
       : Object.keys(chars);
 
     const roster = chosen
       .map(
-        (x) =>
-          `${x}: ${chars[x][1]} ${chars[x][0]} — ${chars[x][2]}`
+        (k) =>
+          `${k}: ${chars[k][1]} ${chars[k][0]} — ${chars[k][2]}`
       )
       .join("\n");
 
@@ -46,18 +46,25 @@ ${roster}
 
 Kurallar:
 - Karakterlerin kişiliklerini koru.
-- WhatsApp gibi doğal konuş.
+- WhatsApp gibi doğal ve canlı konuş.
 - Herkes her mesaja cevap vermesin.
 - Mesajlar kısa olsun.
 - 1 ila 4 karakter cevap versin.
-- Sadece JSON döndür:
+- Cevabı JSON formatında döndür.
+- JSON yapısı:
 {"messages":[{"character":"Tony","text":"..."}]}`;
 
     const input = [
+      {
+        role: "user",
+        content: "Return the Avengers conversation as JSON."
+      },
+
       ...history.slice(-30).map((x) => ({
         role: x.role === "assistant" ? "assistant" : "user",
         content: String(x.text || "")
       })),
+
       {
         role: "user",
         content: String(message || "")
@@ -106,7 +113,7 @@ Kurallar:
       parsed = JSON.parse(
         data.output_text || '{"messages":[]}'
       );
-    } catch {
+    } catch (error) {
       return Response.json(
         {
           error: "OpenAI JSON cevabı okunamadı.",
@@ -133,9 +140,10 @@ Kurallar:
   } catch (error) {
     return Response.json(
       {
-        error: `Sunucu Hatası: ${
-          error?.message || "Bilinmeyen hata"
-        }`
+        error:
+          `Sunucu Hatası: ${
+            error?.message || "Bilinmeyen hata"
+          }`
       },
       {
         status: 500
