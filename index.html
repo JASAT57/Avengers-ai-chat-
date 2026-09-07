@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#075e54"><title>Avengers AI Chat</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#dfe5e7;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.app{max-width:520px;margin:auto;height:100dvh;background:#efeae2;display:flex;flex-direction:column}
+header{background:#075e54;color:#fff;padding:12px 14px;display:flex;align-items:center;gap:10px}
+.avatar{width:42px;height:42px;border-radius:50%;background:#128c7e;display:grid;place-items:center;font-size:23px}.title{font-weight:700}.sub{font-size:12px;opacity:.8}
+#chat{flex:1;overflow:auto;padding:14px 10px}.msg{max-width:86%;margin:7px 0;padding:8px 10px;border-radius:9px;background:#fff;box-shadow:0 1px 1px #0001}.msg.me{margin-left:auto;background:#dcf8c6}.who{font-size:12px;font-weight:700;color:#075e54;margin-bottom:3px}.text{font-size:15px;line-height:1.3}
+.composer{padding:8px;background:#f0f0f0;display:flex;gap:7px}.composer textarea{flex:1;border:0;border-radius:20px;padding:11px 14px;font-size:16px;resize:none;outline:0}.send{border:0;border-radius:50%;width:44px;height:44px;background:#128c7e;color:#fff;font-size:19px}
+.panel{padding:8px 10px;background:#075e54;color:#fff;display:none}.panel.show{display:block}.panel textarea{width:100%;min-height:70px;border:0;border-radius:10px;padding:8px}.chars{display:flex;flex-wrap:wrap;gap:5px}.chip{border:0;border-radius:16px;padding:7px 10px;background:#128c7e;color:#fff}.chip.on{background:#25d366;color:#064b3f}
+</style></head>
+<body><div class="app">
+<header id="head"><div class="avatar">🦸</div><div><div class="title">Avengers</div><div class="sub">AI Grup Sohbeti • çevrimiçi</div></div></header>
+<div id="panel" class="panel"><b>Özel prompt</b><textarea id="prompt" placeholder="Örn: Herkes WhatsApp grubunda doğal konuşsun..."></textarea><div id="chars" class="chars"></div></div>
+<div id="chat"></div>
+<div class="composer"><textarea id="input" rows="1" placeholder="Mesaj yaz..."></textarea><button class="send" onclick="send()">➤</button></div>
+</div>
+<script>
+const C={Tony:["🤖","Tony Stark"],Steve:["🇺🇸","Steve Rogers"],Thor:["⚡","Thor"],Bruce:["💚","Bruce Banner / Hulk"],Natasha:["🕷️","Natasha Romanoff"],Clint:["🏹","Clint Barton"],Peter:["🕸️","Peter Parker"],Wanda:["🔮","Wanda Maximoff"],Vision:["💎","Vision"],Strange:["🌀","Stephen Strange"],Sam:["🦅","Sam Wilson"],Bucky:["🦾","Bucky Barnes"],Rhodey:["🛡️","James Rhodes"],Scott:["🐜","Scott Lang / Ant-Man"],Hope:["🐝","Hope Van Dyne / Wasp"],TChalla:["🐾","T’Challa / Black Panther"],Shuri:["🐈‍⬛","Shuri"],Carol:["⭐","Carol Danvers / Captain Marvel"],Rocket:["🦝","Rocket"],Groot:["🌱","Groot"],Nebula:["🔵","Nebula"],Gamora:["💚","Gamora"],Quill:["🚀","Peter Quill / Star-Lord"],Drax:["🗿","Drax"],Mantis:["🌿","Mantis"],Fury:["🕶️","Nick Fury"],Loki:["🐍","Loki"],Deadpool:["🔴","Deadpool"]};
+let active=JSON.parse(localStorage.av_active||"null")||Object.keys(C), history=[], busy=false;
+const chat=document.querySelector("#chat"), input=document.querySelector("#input"), promptEl=document.querySelector("#prompt");
+promptEl.value=localStorage.av_prompt||"";
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function add(w,t,me=false){let d=document.createElement("div");d.className="msg"+(me?" me":"");d.innerHTML=me?`<div class=text>${esc(t)}</div>`:`<div class=who>${C[w]?.[0]||"🦸"} ${C[w]?.[1]||w}</div><div class=text>${esc(t)}</div>`;chat.appendChild(d);chat.scrollTop=chat.scrollHeight}
+async function send(){let v=input.value.trim();if(!v||busy)return;busy=true;add("Sen",v,true);history.push({role:"user",text:v});input.value="";
+try{let r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:v,history,systemPrompt:promptEl.value,active})});let data=await r.json();if(!r.ok)throw Error(data.error||"Sunucu hatası");for(const m of data.messages||[]){add(m.character,m.text);history.push({role:"assistant",text:`${m.character}: ${m.text}`})}}catch(e){add("Tony","Bağlantıda bir sorun var: "+e.message)}finally{busy=false}}
+document.querySelector("#head").onclick=()=>document.querySelector("#panel").classList.toggle("show");
+const box=document.querySelector("#chars");Object.entries(C).forEach(([k,v])=>{let b=document.createElement("button");b.className="chip "+(active.includes(k)?"on":"");b.textContent=v[0]+" "+v[1];b.onclick=()=>{active=active.includes(k)?active.filter(x=>x!==k):[...active,k];localStorage.av_active=JSON.stringify(active);b.classList.toggle("on")};box.appendChild(b)});
+promptEl.onchange=()=>localStorage.av_prompt=promptEl.value;add("Tony","Avengers grubu hazır. Gerçek AI bağlantısı için hazırım. 😎");
+</script></body></html>
