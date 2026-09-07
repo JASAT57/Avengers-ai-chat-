@@ -1,0 +1,10 @@
+{
+  "name": "Avengers AI Chat",
+  "short_name": "Avengers Chat",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b141a",
+  "theme_color": "#202c33",
+  "lang": "tr",
+  "icons": []
+}

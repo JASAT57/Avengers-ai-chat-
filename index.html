@@ -1,0 +1,38 @@
+<!doctype html><html lang="tr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#202c33"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Avengers Chat">
+<link rel="manifest" href="/manifest.webmanifest"><title>Avengers Chat</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;height:100%;overflow:hidden;background:#0b141a;color:#e9edef;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif}
+.app{height:100%;display:flex;flex-direction:column}.head{height:64px;min-height:64px;background:#202c33;display:flex;align-items:center;padding:7px 12px;gap:10px}.av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#334047;font-size:23px}.ttl{font-weight:700}.sub{font-size:12px;color:#aebac1}.gear{margin-left:auto;background:transparent;border:0;color:#fff;font-size:20px}
+#chat{flex:1;overflow:auto;padding:10px 9px;background:radial-gradient(circle at 50% -10%,#17262f,#0b141a 55%)}.day{margin:5px auto 12px;width:max-content;background:#202c33;color:#aebac1;border-radius:8px;padding:5px 10px;font-size:11px}
+.b{max-width:84%;background:#202c33;border-radius:9px;padding:7px 9px;margin:4px 0;box-shadow:0 1px 1px #0005}.me{margin-left:auto;background:#005c4b}.nm{font-size:13px;font-weight:700;color:#7dd3c7}.tx{font-size:15px;line-height:1.35}.tm{text-align:right;color:#aebac1;font-size:10px;margin-top:3px}
+.typ{display:none;color:#aebac1;font-size:12px;padding:3px 13px}.typ.on{display:block}.composer{display:flex;gap:7px;padding:7px 8px;background:#202c33}.composer input{flex:1;min-width:0;border:0;outline:0;background:#2a3941;color:#fff;border-radius:22px;padding:11px 15px;font-size:16px}.send{width:44px;height:44px;border:0;border-radius:50%;background:#00a884;color:#fff;font-size:20px}
+#settings{position:fixed;inset:0;z-index:9;background:#0b141a;display:none;padding:calc(env(safe-area-inset-top) + 12px) 14px;overflow:auto}#settings.on{display:block}.row{display:flex;justify-content:space-between;align-items:center}.close{background:transparent;color:#fff;border:0;font-size:22px}.panel{background:#202c33;border-radius:12px;padding:14px;margin:12px 0}.panel textarea{width:100%;height:260px;background:#111b21;color:#fff;border:1px solid #46545c;border-radius:8px;padding:10px;font-size:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}.grid label{background:#2a3941;padding:8px;border-radius:8px;font-size:12px}.save{width:100%;padding:11px;border:0;border-radius:9px;background:#00a884;color:#fff;font-weight:700}
+</style></head><body><div class="app">
+<div class="head"><div class="av">🛡️</div><div><div class="ttl">AVENGERS</div><div class="sub" id="sub">AI grup sohbeti</div></div><button class="gear" onclick="openSet()">⚙️</button></div>
+<div id="chat"><div class="day">BUGÜN</div></div><div id="typing" class="typ">Avengers yazıyor...</div>
+<div class="composer"><input id="msg" placeholder="Mesaj yaz..." enterkeyhint="send"><button class="send" onclick="send()">➤</button></div></div>
+<section id="settings"><div class="row"><h2>Ayarlar</h2><button class="close" onclick="closeSet()">✕</button></div>
+<div class="panel"><h3>Avengers Promptu</h3><textarea id="prompt"></textarea><button class="save" onclick="saveSet()">Kaydet</button></div>
+<div class="panel"><h3>Aktif karakterler</h3><div id="grid" class="grid"></div></div></section>
+<script>
+const defaultPrompt=`AVENGERS WHATSAPP GRUP SOHBETİ — KESİN KURALLAR
+Karakterler Avengers filmlerindeki kişiliklerine uygun konuşacak.
+Karakter isimleri kalın olacak. Sabit emojileri kullanılacak.
+Her mesaj ayrı satırda, kısa ve doğal olacak.
+Herkes her mesaja cevap vermeyecek.
+Karakterler kullanıcıdan bağımsız kısa konuşmalar başlatabilir.
+Kullanıcı bir karakteri çağırdığında diğerleri de uygun görürse araya girebilir.
+Uzun paragraf, sahne anlatımı ve zaman atlaması olmayacak.
+Sohbet 300 kişilik gerçek bir WhatsApp grubunun kaotik ve canlı hissini verecek.`;
+let prompt=localStorage.prompt||defaultPrompt, active=JSON.parse(localStorage.active||"[]"), chars={}, hist=[];
+const $=id=>document.getElementById(id);
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function add(n,e,t,me=false){$("chat").insertAdjacentHTML("beforeend",`<div class="b ${me?"me":""}"><div class="nm">${me?"Sen":esc(n+" "+e)}</div><div class="tx">${esc(t)}</div><div class="tm">${new Date().toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"})}</div></div>`);$("chat").scrollTop=$("chat").scrollHeight}
+function openSet(){$("settings").classList.add("on")};function closeSet(){$("settings").classList.remove("on")}
+async function init(){chars=await (await fetch("/api/characters")).json();if(!active.length)active=Object.keys(chars);$("prompt").value=prompt;$("grid").innerHTML=Object.entries(chars).map(([k,v])=>`<label><input data-k="${k}" type="checkbox" ${active.includes(k)?"checked":""}> ${v.emoji} ${v.name}</label>`).join("");add("Tony","🤖","Avengers grubuna hoş geldin. 😏")}
+function saveSet(){prompt=$("prompt").value;active=[...document.querySelectorAll("[data-k]:checked")].map(x=>x.dataset.k);localStorage.prompt=prompt;localStorage.active=JSON.stringify(active);closeSet();add("Tony","🤖","Ayarlar kaydedildi. Şimdi başlayabiliriz.")}
+async function send(){let v=$("msg").value.trim();if(!v)return;add("","",v,true);hist.push({role:"user",text:v});$("msg").value="";$("typing").classList.add("on");try{let r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:v,history:hist,systemPrompt:prompt,active})});let d=await r.json();if(!r.ok)throw Error(d.error||"AI bağlantı hatası");for(const m of d.messages){let c=chars[m.character];if(c){add(c.name,c.emoji,m.text);hist.push({role:"assistant",text:m.text})}}}catch(e){add("Tony","🤖","AI bağlantısı hazır değil: "+e.message)}$("typing").classList.remove("on")}
+$("msg").addEventListener("keydown",e=>{if(e.key==="Enter")send()});init();
+</script></body></html>
