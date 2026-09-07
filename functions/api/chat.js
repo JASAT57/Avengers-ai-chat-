@@ -1,7 +1,11 @@
 export async function onRequestPost(context) {
   try {
-    const { message, history = [], systemPrompt = "", active = [] } =
-      await context.request.json();
+    const {
+      message,
+      history = [],
+      systemPrompt = "",
+      active = []
+    } = await context.request.json();
 
     const chars = {
       Tony: ["🤖", "Tony Stark", "alaycı, zeki, hızlı ve kendinden emin"],
@@ -9,8 +13,10 @@ export async function onRequestPost(context) {
       Thor: ["⚡", "Thor", "asil, görkemli, ciddi"],
       Bruce: ["💚", "Bruce Banner / Hulk", "bilimsel, Hulk kısa ve güçlü"],
       Natasha: ["🕷️", "Natasha Romanoff", "sakin, keskin, gözlemci"],
+      Clint: ["🏹", "Clint Barton", "pratik, kuru mizahlı"],
       Peter: ["🕸️", "Peter Parker", "genç, enerjik, esprili"],
       Wanda: ["🔮", "Wanda Maximoff", "empatik, sezgisel, güçlü"],
+      Vision: ["💎", "Vision", "mantıklı, sakin"],
       Strange: ["🌀", "Stephen Strange", "soğukkanlı, analitik"],
       Sam: ["🦅", "Sam Wilson", "sıcak, dengeli, esprili"],
       Bucky: ["🦾", "Bucky Barnes", "az konuşan, kuru mizahlı"],
@@ -24,7 +30,10 @@ export async function onRequestPost(context) {
       : Object.keys(chars);
 
     const roster = chosen
-      .map((x) => `${x}: ${chars[x][1]} ${chars[x][0]} — ${chars[x][2]}`)
+      .map(
+        (x) =>
+          `${x}: ${chars[x][1]} ${chars[x][0]} — ${chars[x][2]}`
+      )
       .join("\n");
 
     const instructions = `Sen Avengers WhatsApp grup sohbetinin AI yönetmenisin.
@@ -61,7 +70,7 @@ Kurallar:
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${context.env.OPENAI_API_KEY}`
+          "Authorization": `Bearer ${context.env.OPENAI_API_KEY}`
         },
         body: JSON.stringify({
           model: "gpt-5.6",
@@ -77,17 +86,37 @@ Kurallar:
     );
 
     if (!response.ok) {
+      const detail = await response.text();
+
       return Response.json(
-        { error: "OpenAI bağlantı hatası." },
-        { status: 502 }
+        {
+          error: `OpenAI API Hatası: ${detail}`
+        },
+        {
+          status: 502
+        }
       );
     }
 
     const data = await response.json();
 
-    const parsed = JSON.parse(
-      data.output_text || '{"messages":[]}'
-    );
+    let parsed;
+
+    try {
+      parsed = JSON.parse(
+        data.output_text || '{"messages":[]}'
+      );
+    } catch {
+      return Response.json(
+        {
+          error: "OpenAI JSON cevabı okunamadı.",
+          raw: data.output_text || ""
+        },
+        {
+          status: 502
+        }
+      );
+    }
 
     const messages = (parsed.messages || [])
       .filter(
@@ -97,12 +126,22 @@ Kurallar:
       )
       .slice(0, 4);
 
-    return Response.json({ messages });
+    return Response.json({
+      messages
+    });
 
   } catch (error) {
     return Response.json(
-      { error: error.message || "Sunucu hatası" },
-      { status: 500 }
+      {
+        error: `Sunucu Hatası: ${
+          error?.message || "Bilinmeyen hata"
+        }`
+      },
+      {
+        status: 500
+      }
     );
   }
 }
+
+    
